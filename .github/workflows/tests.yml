@@ -1,0 +1,45 @@
+name: Tests
+
+on:
+  pull_request:
+    branches: [main]
+    paths-ignore:
+      - '**/*.md'
+      - 'docs/**'
+      - 'LICENSE'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: Minimal checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - name: Check Python syntax
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import subprocess
+
+          paths = subprocess.check_output(["git", "ls-files", "-z"]).decode().split("\0")
+          checked = 0
+          for name in paths:
+              path = Path(name)
+              if not name or path.suffix != ".py" or path.is_symlink() or not path.is_file():
+                  continue
+              compile(path.read_bytes(), str(path), "exec")
+              checked += 1
+          if not checked:
+              raise SystemExit("No Python sources checked")
+          print(f"Python syntax OK: {checked} files")
+          PY

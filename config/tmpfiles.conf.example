@@ -1,0 +1,4 @@
+# Shared Nagios runtime hierarchy; install under /etc/tmpfiles.d/.
+d /run/nagios4 0750 nagios nagios -
+d /run/nagios4/unifi-ports 0700 nagios nagios -
+
